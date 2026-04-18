@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIE221 — Flashcards</title>
+<style>
+:root {
+  --blue: #4257b2;
+  --blue-light: #eef0fb;
+  --blue-dark: #2e3856;
+  --green: #23b26d;
+  --red: #e05858;
+  --yellow: #f7b731;
+  --bg: #f6f7fb;
+  --card-bg: #fff;
+  --text: #303545;
+  --text-muted: #6e7fac;
+  --border: #dde0ef;
+  --radius: 12px;
+  --shadow: 0 2px 16px rgba(66,87,178,.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header { background: var(--blue-dark); color: #fff; padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+.header-meta { font-size: 13px; color: rgba(255,255,255,.65); }
+
+/* LAYOUT */
+.container { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
+.filter-bar span { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-right: 4px; }
+.topic-btn { border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .15s; }
+.topic-btn:hover { border-color: var(--blue); color: var(--blue); }
+.topic-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* MODE TABS */
+.mode-tabs { display: flex; gap: 4px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+.mode-tab { flex: 1; padding: 9px 8px; border: none; background: transparent; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-muted); transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.mode-tab:hover { background: var(--blue-light); color: var(--blue); }
+.mode-tab.active { background: var(--blue); color: #fff; }
+
+/* PROGRESS BAR */
+.progress-bar-wrap { height: 4px; background: var(--border); border-radius: 4px; margin-bottom: 20px; }
+.progress-bar-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width .3s; }
+.progress-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+
+/* ===== FLASHCARD MODE ===== */
+#mode-flashcard { display: block; }
+.flashcard-wrap { perspective: 1200px; margin-bottom: 24px; cursor: pointer; user-select: none; }
+.flashcard { width: 100%; min-height: 300px; position: relative; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.4,0,.2,1); border-radius: var(--radius); }
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard-front, .flashcard-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 40px 48px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.flashcard-back { transform: rotateY(180deg); }
+.card-topic-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--blue); background: var(--blue-light); padding: 4px 10px; border-radius: 20px; margin-bottom: 18px; }
+.card-term { font-size: 22px; font-weight: 700; line-height: 1.4; color: var(--text); }
+.card-def { font-size: 16px; line-height: 1.7; color: var(--text); white-space: pre-line; }
+.card-hint { font-size: 12px; color: var(--text-muted); margin-top: 20px; }
+
+.flashcard-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fc-nav { display: flex; align-items: center; gap: 12px; }
+.fc-btn { background: #fff; border: 1.5px solid var(--border); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; font-size: 18px; }
+.fc-btn:hover { border-color: var(--blue); color: var(--blue); }
+.fc-btn:disabled { opacity: .35; cursor: default; }
+.fc-counter { font-size: 14px; font-weight: 600; color: var(--text-muted); min-width: 60px; text-align: center; }
+.fc-actions { display: flex; gap: 10px; }
+.btn { padding: 9px 20px; border-radius: 8px; border: none; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 7px; }
+.btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { opacity: .9; }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { opacity: .9; }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { opacity: .9; }
+
+.known-counter { display: flex; gap: 16px; margin-top: 16px; justify-content: center; }
+.known-counter-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-green { background: var(--green); }
+.dot-red { background: var(--red); }
+
+/* ===== LEARN MODE (multiple choice) ===== */
+#mode-learn { display: none; }
+.learn-question { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 36px 40px; margin-bottom: 20px; }
+.learn-q-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--blue); background: var(--blue-light); padding: 4px 10px; border-radius: 20px; margin-bottom: 14px; display: inline-block; }
+.learn-q-text { font-size: 20px; font-weight: 700; line-height: 1.45; }
+.learn-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.learn-option { background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px; padding: 16px 20px; cursor: pointer; font-size: 14.5px; line-height: 1.5; transition: all .15s; font-weight: 500; text-align: left; }
+.learn-option:hover:not(.disabled) { border-color: var(--blue); background: var(--blue-light); }
+.learn-option.correct { border-color: var(--green); background: #edfaf3; color: #1a7a4e; }
+.learn-option.wrong { border-color: var(--red); background: #fdf0f0; color: #a83232; }
+.learn-option.disabled { cursor: default; }
+.learn-feedback { background: var(--card-bg); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; display: none; border-left: 4px solid var(--green); }
+.learn-feedback.wrong { border-color: var(--red); }
+.learn-next-wrap { text-align: right; }
+
+/* ===== MATCH MODE ===== */
+#mode-match { display: none; }
+.match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.match-card { background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; font-size: 13.5px; line-height: 1.5; transition: all .15s; font-weight: 500; min-height: 80px; display: flex; align-items: center; }
+.match-card:hover { border-color: var(--blue); }
+.match-card.selected { border-color: var(--blue); background: var(--blue-light); }
+.match-card.matched { border-color: var(--green); background: #edfaf3; opacity: .6; pointer-events: none; }
+.match-card.wrong-flash { border-color: var(--red); background: #fdf0f0; animation: shake .3s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.match-score { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+
+/* ===== TEST MODE ===== */
+#mode-test { display: none; }
+.test-item { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px 32px; margin-bottom: 16px; }
+.test-q-num { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.test-q-text { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+.test-input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; transition: border .15s; min-height: 60px; }
+.test-input:focus { border-color: var(--blue); }
+.test-result { margin-top: 12px; display: none; padding: 14px 16px; border-radius: 8px; font-size: 13.5px; line-height: 1.6; }
+.test-result.correct { background: #edfaf3; color: #1a7a4e; border-left: 4px solid var(--green); }
+.test-result.wrong { background: #fdf0f0; color: #a83232; border-left: 4px solid var(--red); }
+.test-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+.test-summary { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px; text-align: center; display: none; }
+.test-score-big { font-size: 64px; font-weight: 800; color: var(--blue); line-height: 1; }
+.test-score-label { font-size: 16px; color: var(--text-muted); margin-top: 8px; }
+
+/* COMPLETION SCREEN */
+.completion { text-align: center; padding: 48px 24px; }
+.completion-emoji { font-size: 56px; margin-bottom: 16px; }
+.completion h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+.completion p { color: var(--text-muted); margin-bottom: 24px; }
+
+@media (max-width: 600px) {
+  .learn-options { grid-template-columns: 1fr; }
+  .match-grid { grid-template-columns: 1fr; }
+  .flashcard-front, .flashcard-back { padding: 28px 24px; }
+  .card-term { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>MIE221 — Manufacturing Engineering</h1>
+  <div class="header-meta" id="header-meta">Loading cards...</div>
+</header>
+
+<div class="container">
+  <!-- TOPIC FILTER -->
+  <div class="filter-bar">
+    <span>Topic:</span>
+    <button class="topic-btn active" onclick="setTopic('all')">All</button>
+    <button class="topic-btn" onclick="setTopic('Casting')">Casting</button>
+    <button class="topic-btn" onclick="setTopic('Powder Processing')">Powder</button>
+    <button class="topic-btn" onclick="setTopic('Polymers')">Polymers</button>
+    <button class="topic-btn" onclick="setTopic('Forming')">Forming</button>
+    <button class="topic-btn" onclick="setTopic('Machining')">Machining</button>
+    <button class="topic-btn" onclick="setTopic('Assembly')">Assembly</button>
+    <button class="topic-btn" onclick="setTopic('Workholding')">Workholding</button>
+    <button class="topic-btn" onclick="setTopic('MH & Robots')">MH & Robots</button>
+    <button class="topic-btn" onclick="setTopic('Surface Finish')">Surface Finish</button>
+  </div>
+
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('flashcard')" id="tab-flashcard">🃏 Flashcards</button>
+    <button class="mode-tab" onclick="setMode('learn')" id="tab-learn">🎯 Learn</button>
+    <button class="mode-tab" onclick="setMode('match')" id="tab-match">🔗 Match</button>
+    <button class="mode-tab" onclick="setMode('test')" id="tab-test">📝 Test</button>
+  </div>
+
+  <!-- FLASHCARD MODE -->
+  <div id="mode-flashcard">
+    <div class="progress-label">
+      <span id="fc-progress-label">Card 1 of 0</span>
+      <span id="fc-known-label">Known: 0</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fc-progress-bar" style="width:0%"></div></div>
+    <div class="flashcard-wrap" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="flashcard-front">
+          <div class="card-topic-badge" id="fc-topic">Topic</div>
+          <div class="card-term" id="fc-term">Loading...</div>
+          <div class="card-hint">Click to reveal answer</div>
+        </div>
+        <div class="flashcard-back">
+          <div class="card-topic-badge" id="fc-topic-back">Topic</div>
+          <div class="card-def" id="fc-def">Definition</div>
+        </div>
+      </div>
+    </div>
+    <div class="flashcard-controls">
+      <div class="fc-nav">
+        <button class="fc-btn" id="fc-prev" onclick="prevCard()" title="Previous">‹</button>
+        <span class="fc-counter" id="fc-counter">1 / 0</span>
+        <button class="fc-btn" id="fc-next" onclick="nextCard()" title="Next">›</button>
+      </div>
+      <div class="fc-actions">
+        <button class="btn btn-outline" onclick="shuffleCards()">🔀 Shuffle</button>
+        <button class="btn btn-red" onclick="markCard(false)">✗ Still learning</button>
+        <button class="btn btn-green" onclick="markCard(true)">✓ Know it</button>
+      </div>
+    </div>
+    <div class="known-counter">
+      <div class="known-counter-item"><div class="dot dot-green"></div><span id="known-count">0 known</span></div>
+      <div class="known-counter-item"><div class="dot dot-red"></div><span id="unknown-count">0 still learning</span></div>
+    </div>
+  </div>
+
+  <!-- LEARN MODE -->
+  <div id="mode-learn">
+    <div class="progress-label">
+      <span id="learn-progress-label">Question 1 of 0</span>
+      <span id="learn-score-label">Score: 0/0</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="learn-progress-bar" style="width:0%"></div></div>
+    <div class="learn-question">
+      <div class="learn-q-badge" id="learn-topic">Topic</div>
+      <div class="learn-q-text" id="learn-question">Loading...</div>
+    </div>
+    <div class="learn-options" id="learn-options"></div>
+    <div class="learn-feedback" id="learn-feedback"></div>
+    <div class="learn-next-wrap">
+      <button class="btn btn-blue" id="learn-next-btn" onclick="nextLearnQ()" style="display:none">Next →</button>
+    </div>
+    <div class="completion" id="learn-completion" style="display:none">
+      <div class="completion-emoji">🎉</div>
+      <h2>Round complete!</h2>
+      <p id="learn-final-score"></p>
+      <button class="btn btn-blue" onclick="startLearn()">Try again</button>
+    </div>
+  </div>
+
+  <!-- MATCH MODE -->
+  <div id="mode-match">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:2px;">Match the term to its definition</div>
+        <div class="match-score">Matched: <span id="match-count">0</span> / <span id="match-total">0</span></div>
+      </div>
+      <button class="btn btn-outline" onclick="startMatch()">🔀 New round</button>
+    </div>
+    <div class="match-grid" id="match-grid"></div>
+    <div class="completion" id="match-completion" style="display:none">
+      <div class="completion-emoji">⚡</div>
+      <h2>All matched!</h2>
+      <p id="match-time"></p>
+      <button class="btn btn-blue" onclick="startMatch()">Play again</button>
+    </div>
+  </div>
+
+  <!-- TEST MODE -->
+  <div id="mode-test">
+    <div id="test-questions"></div>
+    <div class="test-actions" id="test-actions" style="display:none">
+      <button class="btn btn-blue" onclick="gradeTest()">✓ Grade my answers</button>
+    </div>
+    <div class="test-summary" id="test-summary">
+      <div class="test-score-big" id="test-score-pct">0%</div>
+      <div class="test-score-label" id="test-score-label">0 / 0 correct</div>
+      <br><button class="btn btn-blue" onclick="startTest()">Try again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CARD DATA — MIE221 Manufacturing Engineering
+// ============================================================
+const ALL_CARDS = [
+// ─── CASTING ─────────────────────────────────────────────
+{topic:"Casting", term:"What are the 7 steps of sand casting in order?",
+def:`1. Design pattern (oversized for shrinkage + machining allowance)
+2. Make sand mold — pack sand around pattern in cope + drag
+3. Remove pattern — cavity remains
+4. Place cores (for internal cavities)
+5. Close mold (cope on drag, align at parting line)
+6. Pour molten metal — flows via sprue → runner → ingate → cavity
+7. Solidify → break mold → remove casting → trim`},
+
+{topic:"Casting", term:"What is the function of a riser, and what is the critical rule for it to work?",
+def:`A riser is a reservoir of molten metal adjacent to the casting that compensates for solidification shrinkage by feeding liquid metal into the cavity as it shrinks.
+
+Critical rule: The riser must solidify AFTER the casting. If it solidifies first, it cannot feed the shrinking part. The riser must be larger than the thickest section.`},
+
+{topic:"Casting", term:"Why is the sprue tapered, and what happens if it isn't?",
+def:`Metal accelerates downward due to gravity. By continuity (Q = A₁v₁ = A₂v₂), the cross-section must decrease as velocity increases.
+
+If the sprue is straight-walled, the accelerating metal pulls away from the wall → a gap forms → atmospheric air is aspirated into the melt → gas porosity defect.`},
+
+{topic:"Casting", term:"Cold chamber vs hot chamber die casting — when is each used?",
+def:`Cold chamber: Used for Al and Cu alloys. These metals are corrosive to the steel of a submerged hot-chamber mechanism, so metal is ladled into a separate chamber for each shot.
+
+Hot chamber: Used for Zn and Mg alloys. Low melting point, non-corrosive — the injection mechanism stays submerged in the melt → faster cycle.`},
+
+{topic:"Casting", term:"What causes a shrinkage cavity, and where does it form?",
+def:`The thickest section of a casting solidifies LAST. Surrounding thinner sections solidify first, cutting off the supply of liquid metal.
+
+As the thick section solidifies, it shrinks with no liquid available to compensate → an internal void (shrinkage cavity) forms at that location.`},
+
+{topic:"Casting", term:"Sand casting vs die casting — compare production rate, tooling cost, and surface finish.",
+def:`Sand casting: 1–20 parts/hr, LOW tooling cost, rough surface finish, gravity-driven, expendable mold
+Die casting: 2–200 parts/hr, VERY HIGH tooling cost, good surface finish, high pressure (1–1000 MPa), permanent mold
+
+Sand best for: large parts, low volume, many alloys
+Die best for: small, high-volume metal parts`},
+
+{topic:"Casting", term:"What is investment casting best suited for, and what are its key characteristics?",
+def:`Best for: Complex, precision shapes requiring excellent surface finish
+Key characteristics:
+• Disposable wax pattern encased in ceramic shell
+• Ra ≈ 1–6 μm (far better than sand casting)
+• High tooling cost, low production rate
+• Preheated mold minimizes thermal shock → fewer defects
+• Used for: jet engine blades, surgical implants, jewelry`},
+
+{topic:"Casting", term:"What is fluidity in casting, and what two factors reduce it?",
+def:`Fluidity: The capability of molten metal to fill mold cavities.
+
+Factors that REDUCE fluidity:
+1. Higher surface tension → less ability to flow into narrow sections
+2. Higher viscosity → greater resistance to flow
+
+Higher fluidity required for thin/intricate features (e.g., gray cast iron has high fluidity due to composition).`},
+
+{topic:"Casting", term:"What is aspiration in casting and how is it prevented?",
+def:`Aspiration: Air is drawn into the liquid metal when pressure inside the stream drops below atmospheric pressure. Occurs in a straight-walled sprue as metal accelerates away from the wall.
+
+Prevention: Taper the sprue so cross-sectional area decreases proportionally to increasing velocity — maintains metal contact with the wall throughout.`},
+
+{topic:"Casting", term:"What are the components of the sand casting gating system and their roles?",
+def:`• Pouring basin: Controls flow rate into sprue, reduces turbulence
+• Sprue: Vertical channel, controls velocity
+• Runner: Horizontal channel, distributes metal from sprue to ingates
+• Ingate: Entry point into mold cavity
+• Riser: Feeds shrinkage with liquid metal
+• Vents: Allow air/gases to escape
+• Down-runner base: Small well at sprue bottom prevents splashing`},
+
+{topic:"Casting", term:"What is gray cast iron, and what makes it suitable for engine blocks?",
+def:`Composition: 2.5–4% C, 1–3% Si, 0.4–1% Mn
+Key properties:
+• High fluidity → fills thin, intricate mold features easily
+• Low shrinkage → minimal dimensional variation
+• Easy to machine
+• Good vibration damping
+Application: Engine blocks, machine tool bases`},
+
+{topic:"Casting", term:"Bernoulli equation for casting fluid flow — simplified form when p₁ = p₂ and no friction?",
+def:`Full: h₁ + p₁/ρg + v₁²/2g = h₂ + p₂/ρg + v₂²/2g + f
+
+Simplified (p₁=p₂ atm, f=0, datum at bottom h₂=0):
+h₁ + v₁²/2g = v₂²/2g
+
+Then use continuity to find bottom diameter:
+Q = A₁v₁ = A₂v₂  →  A₂ = A₁(v₁/v₂)  →  d₂ = d₁√(v₁/v₂)`},
+
+// ─── POWDER PROCESSING ────────────────────────────────────
+{topic:"Powder Processing", term:"What are the 4 steps of powder processing in order?",
+def:`1. Powder Production (atomization / reduction / pulverization)
+2. Mixing (blending powders + lubricants/binders)
+3. Compacting (forming a "green" preform under pressure)
+4. Sintering (heating to 60–80% Tm in controlled atmosphere — bonds particles)`},
+
+{topic:"Powder Processing", term:"Water atomization vs gas atomization — key differences and gas advantage?",
+def:`Both: Break up molten metal stream into fine droplets that solidify.
+
+Water atomization: Water jets → irregular particle shape, surface oxide formation
+Gas atomization: Argon jets → more regular shape, INERT gas prevents oxidation, better cleanliness
+
+Gas disadvantage: Slower cooling → larger tank needed; risk of argon entrapment → gas porosity in final parts`},
+
+{topic:"Powder Processing", term:"What is the Höganäs process?",
+def:`Reduction of metal oxides to produce iron powder.
+Process: Pure magnetite + coke + limestone → heated to ~1260°C → carbon in coke reacts with oxygen in magnetite → reduces to iron powder → annealed at 870°C → final particle size <180 μm`},
+
+{topic:"Powder Processing", term:"What is the Coldstream process?",
+def:`A pulverization method for hard, brittle metals (WC, W, Mo, tool steels).
+Process: Granular metal fed into high-pressure gas stream (up to 6.9 MPa) → expanded adiabatically through a venturi → operates BELOW room temperature → particles shatter on impact
+
+Advantages over ball milling: Less contamination, finer particles (<10 μm), no heat-induced oxidation`},
+
+{topic:"Powder Processing", term:"What is sintering — driving force, mechanism, and key behavior?",
+def:`Sintering: Heating powder compact to 60–80% of absolute melting point (Tm) in a protective atmosphere.
+
+Driving force: Reduction of surface energy (particles minimize total surface area)
+Mechanism: Diffusion — atoms migrate across particle boundaries
+Process: Neck growth at contact points → surface area decreases → driving force diminishes → sintering rate DECREASES as it proceeds (self-limiting)`},
+
+{topic:"Powder Processing", term:"What is a 'green' preform and what are the design rules for powder processing?",
+def:`Green preform: Compacted powder before sintering — fragile, not yet bonded by sintering.
+
+Design rules for powder-processed parts:
+• Near-net shape — minimal finishing needed
+• No very large parts (pressure limits)
+• Avoid thin geometrical details (poor powder flow)
+• Avoid sharp corners/edges (stress concentration, breakage)
+• Avoid undercuts and threads (machine AFTER sintering)`},
+
+{topic:"Powder Processing", term:"When is powder processing preferred over casting?",
+def:`Used for materials unsuitable for fusion/casting because of:
+• Very high melting points (e.g., tungsten carbide, tungsten, molybdenum)
+• Need for controlled porosity (filters, bearings)
+• Near-net shape complex geometry (avoids expensive machining)
+• Ability to mix different materials into composite parts
+
+Main advantage: Minimal material waste + complex geometries without machining`},
+
+// ─── POLYMERS ─────────────────────────────────────────────
+{topic:"Polymers", term:"Thermoplastic vs thermoset vs elastomer — how do they differ in cross-linking and re-melting?",
+def:`Thermoplastics: NO cross-links. Linear/branched chains. Can be REMELTED and reshaped repeatedly. (PE, PVC, Nylon)
+
+Thermosets: HIGH cross-linking. Permanent rigid 3D network. CANNOT be remelted — will degrade/burn. (Epoxy, polyurethane)
+
+Elastomers: LOW cross-linking. Highly elastic — can recover from large deformations. Primarily elastic behavior. (Rubber)`},
+
+{topic:"Polymers", term:"Why can cross-linked polymers NOT crystallize?",
+def:`Crystallization requires polymer chains to ALIGN into ordered, regular regions (crystallites).
+Cross-links physically ANCHOR chains at fixed points, preventing the chain rearrangement and alignment needed to form crystalline structure.
+→ The more cross-links, the more impossible crystallization becomes.
+(This is why thermosets have no Tm — only Tg)`},
+
+{topic:"Polymers", term:"What are Tg, Tm, and Tc, and which polymer types have each?",
+def:`Tg (Glass transition): Transition from hard/glassy to soft/rubbery state. ALL amorphous polymers + thermosets have Tg.
+
+Tm (Melting temperature): Crystalline regions melt. Only SEMI-CRYSTALLINE thermoplastics have Tm.
+
+Tc (Crystallization temperature): Between Tg and Tm; where crystallization occurs on cooling.
+
+Thermosets: Only Tg (cannot melt — cross-links prevent)`},
+
+{topic:"Polymers", term:"Name the three zones of an extruder screw in order and the role of each.",
+def:`1. Feeding: Polymer pellets fed from hopper, moved forward by screw rotation — low pressure
+2. Compression: Screw channel depth decreases → pellets compacted, frictional heat generated → melting begins
+3. Metering: Uniform melt formed, pressure built up, flow rate to die is controlled
+
+Key: Zone names must be exact — "Feeding → Compression → Metering"`},
+
+{topic:"Polymers", term:"What is die swell in extrusion and what causes it?",
+def:`Die swell: The extruded polymer expands in diameter after exiting the die, larger than the die opening.
+
+Two causes:
+1. Molecular relaxation: Polymer chains were compressed/aligned while passing through die; once pressure is released at exit, chains relax back toward coiled state → expansion
+2. Viscoelastic nature: Polymers store elastic energy during flow; elastic recovery causes swelling after the constraining die is removed`},
+
+{topic:"Polymers", term:"Injection molding cycle — what are the 3 time components and which dominates?",
+def:`tT = tf + tc + te
+• tf = filling time (injection of melt into mold)
+• tc = cooling time (solidification in mold) ← DOMINATES (~75% of cycle)
+• te = ejection time
+
+Cooling time dominates because the polymer must fully solidify before ejection. Reducing wall thickness is the main way to cut cycle time.`},
+
+{topic:"Polymers", term:"What is packing pressure in injection molding and why is it applied?",
+def:`After the mold is filled, packing pressure is maintained on the melt until the gate freezes.
+Purpose: Compensate for volumetric shrinkage as the polymer cools — additional material is forced into the mold cavity to prevent sink marks and voids.
+Once the gate freezes, no more material can enter → packing phase ends.`},
+
+{topic:"Polymers", term:"Why must injection molds be designed with draft angles, uniform wall thickness, and cooling channels?",
+def:`Draft angles: Allow part ejection without sticking/drag marks
+Uniform wall thickness: Prevents non-uniform shrinkage → warping/residual stresses; cooling time is proportional to h²max
+Cooling channels: Reduce cooling time (largest portion of cycle); uniform cooling prevents distortion
+Avoid: Sharp corners (stress concentration), undercuts (prevent ejection), sudden thickness changes`},
+
+// ─── FORMING ──────────────────────────────────────────────
+{topic:"Forming", term:"Hot rolling vs cold rolling — temperature, microstructure, surface finish, power?",
+def:`Hot rolling: T > recrystallization temp (~½ Tm absolute)
+→ Lower forming forces, dynamic recrystallization → equiaxed refined grains, ROUGH surface finish, less dimensional accuracy
+
+Cold rolling: T < 0.3 Tm
+→ Higher forces, strain hardening → elongated grains, EXCELLENT surface finish, high dimensional accuracy, residual stresses`},
+
+{topic:"Forming", term:"Name the 3 stages of static recrystallization, their temperatures, and effects on properties.",
+def:`1. Recovery (0.1–0.3 Tm): Dislocations rearrange into lower-energy configs (polygonization). No new grains. Slight residual stress relief, slight ductility increase.
+
+2. Recrystallization (0.3–0.5 Tm): New strain-free EQUIAXED grains nucleate. Dislocation density drops dramatically. Strength↓, ductility↑ significantly.
+
+3. Grain Growth (>0.5 Tm): Grains enlarge, grain boundary area decreases. Strength↓ further, toughness can decrease if too large.`},
+
+{topic:"Forming", term:"Direct (forward) vs indirect (backward) extrusion — key difference and when to use indirect?",
+def:`Direct: Billet forced through die in same direction as ram movement. Billet slides against container wall → friction between billet and container.
+
+Indirect: Die moves toward stationary billet. Billet-container friction is ELIMINATED (billet doesn't move).
+
+Use indirect for: High-friction materials (high-strength steels, Ti, Ni alloys) where friction reduction significantly lowers required force.`},
+
+{topic:"Forming", term:"Open-die vs closed-die forging — key difference and what flash does.",
+def:`Open-die: Metal flows freely outward — no die constraint on shape. Volume conservation: h↓ → diameter↑. Simple shapes only.
+
+Closed-die: Two die halves enclose the part. Flash forms in the gap between die halves.
+Flash role: Restricts metal flow outward → builds internal pressure → ensures full die cavity filling → better part definition. Flash is trimmed afterward.`},
+
+{topic:"Forming", term:"Closed-die forging force formula — what does each variable mean?",
+def:`F = Ks × Yf × Ap
+
+Ks = Object-shape factor (accounts for friction, geometry complexity; higher for complex shapes)
+Yf = Flow stress / yield stress of material (MPa)
+Ap = Projected area of part at end of stroke INCLUDING flash (mm²)
+
+Key: Use FINAL dimensions (end of stroke) — area is largest at end → maximum force at end of stroke`},
+
+{topic:"Forming", term:"Why is closed-die forging force higher than open-die for the same part?",
+def:`Flash formation between die halves RESTRICTS metal flow outward → internal pressure builds up → both Ks (shape factor) and Ap (projected area including flash) INCREASE during the stroke.
+Since F = Ks × Yf × Ap, increasing both Ks and Ap gives significantly higher force than open-die where metal flows freely.`},
+
+{topic:"Forming", term:"Blanking — what is the recommended punch-die gap, and when can force be reduced?",
+def:`Recommended gap: 2–10% of material thickness. Controls edge quality.
+
+Force can be reduced by using a BEVELED punch (oblique cutting angle instead of flat). However, beveled punches should only be used for parts that will undergo further forming — a beveled blank has distorted edges unsuitable as a finished part.`},
+
+{topic:"Forming", term:"Deep drawing — describe the process and what happens to sheet thickness.",
+def:`Deep drawing produces thin-walled cup/can shapes via a combined compression-tension operation.
+Process: Punch forces blank into die cavity; blank holder prevents wrinkling (holds the flange).
+Sheet thickness: Generally MAINTAINED throughout (neither thinned nor thickened significantly) — this distinguishes deep drawing from other sheet metal processes.`},
+
+// ─── MACHINING (C8) ───────────────────────────────────────
+{topic:"Machining", term:"Turning: formula for depth of cut (a) and cutting velocity (V)?",
+def:`Depth of cut: a = (d₁ − d₂) / 2
+(d₁ = initial diameter, d₂ = final diameter)
+
+Cutting velocity: V = π × N × (d₁ + d₂) / 2
+(N = spindle speed in rpm, average of initial and final diameter)
+
+Feed rate f = mm/rev (distance tool advances per spindle revolution)`},
+
+{topic:"Machining", term:"Name the 3 chip types in machining, their causes, and surface quality implications.",
+def:`1. Continuous: Ductile materials, low DoC, proper tool geometry → GOOD surface finish
+2. Discontinuous: Brittle materials OR large depth of cut → vibration/chatter → POOR surface finish
+3. Continuous with BUE (Built-Up Edge): Material adheres to rake face; unstable BUE periodically breaks off → POOR surface finish, accelerates tool wear`},
+
+{topic:"Machining", term:"Crater wear vs flank wear — where does each occur and what causes them?",
+def:`Crater wear: On the RAKE FACE (where chip slides over tool). Caused by high temperature + chip abrasion. Deepens over time → weakens cutting edge.
+
+Flank wear: On the FLANK FACE (rubbing against machined surface). Caused by abrasion of workpiece surface. Directly increases cutting force and degrades surface finish. Used as main wear criterion (VB measurement).`},
+
+{topic:"Machining", term:"Tool material hierarchy — from most tough to hardest?",
+def:`HSS (High Speed Steel): Excellent toughness, can be resharpened, POOR hot hardness → limited to low cutting speeds
+→ Cemented Carbide (WC, TiC): Good toughness, coatable (TiN, Al₂O₃), most widely used
+→ Ceramics (Al₂O₃, Si₃N₄): Hard, brittle, good hot hardness, NOT for interrupted cuts (milling)
+→ cBN / Diamond: HARDEST, extremely brittle, for finishing only, not for milling`},
+
+{topic:"Machining", term:"What is 2½-D milling vs 5-D milling?",
+def:`2½-D milling: Cutting occurs in X-Y plane; Z-axis moves BETWEEN cuts (step down) but is not a cutting axis during the cut. "½" because Z doesn't cut simultaneously with X-Y.
+
+5-D milling: Tool translates in all 3 axes (X,Y,Z) AND rotates about 2 axes simultaneously. Enables complex 3D contours, undercuts, and turbine blade profiles.`},
+
+{topic:"Machining", term:"Three grain-workpiece interaction mechanisms in abrasive machining?",
+def:`1. Cutting: Grain removes material (like a miniature cutting tool) → material removal
+2. Plowing: Grain deforms surface without removing material → surface deformation, residual stresses
+3. Rubbing: Grain slides over surface without cutting or plowing → only HEAT generated
+
+Ratio of cutting:plowing:rubbing varies with grain sharpness — friable grains maintain higher cutting ratio.`},
+
+{topic:"Machining", term:"What does 'friable' mean for abrasive grains, and why is it desirable?",
+def:`Friable: The ability of an abrasive grain to FRACTURE and expose a new sharp cutting edge when it becomes dull.
+
+Desirable because: A dull grain just rubs/plows → heat generation, poor surface finish, wheel glazing. A friable grain self-sharpens by fracturing → maintains cutting effectiveness throughout the grinding wheel's life.`},
+
+{topic:"Machining", term:"Why are coolants used in machining, and what is their primary function?",
+def:`Primary function: THERMAL CONTROL — cutting zone temperatures exceed 1000°C (at rake face). Coolants reduce temperature to prevent:
+• Thermal distortion of workpiece
+• Tool damage / accelerated wear
+• Degradation of surface integrity
+
+NOT primarily for lubrication (that's a secondary effect). Delivery: flooding (low pressure) or aerosol mist for better penetration.`},
+
+{topic:"Machining", term:"Honing vs grinding — which gives better surface finish and what is honing used for?",
+def:`Honing gives BETTER surface finish (~2× better than grinding).
+Honing: Uses abrasive stones in a reciprocating + rotating motion. Used primarily for INTERNAL cylindrical surfaces (e.g., engine cylinder bores). Removes small amounts of material; corrects minor geometric errors.
+Grinding: More material removal, wider range of geometries, but rougher finish than honing.`},
+
+{topic:"Machining", term:"Three real-time tool wear monitoring methods (C8)?",
+def:`1. Cutting force monitoring: Dynamometer/force sensor detects force increase as flank wear increases friction
+2. Acoustic emission (AE): AE sensor detects high-frequency stress waves emitted by wear/fracture events; frequency/amplitude changes indicate wear
+3. Power/current monitoring: Worn tool requires more cutting energy → spindle motor current/power draw increases`},
+
+{topic:"Machining", term:"How is tool wear monitoring data analyzed?",
+def:`Sensor outputs are continuously compared against PREDETERMINED THRESHOLD VALUES.
+When a signal (force, AE amplitude, or power draw) exceeds its threshold → excessive wear indicated → automatic tool change triggered.
+
+Exam tip: Answer this in ≤20 words — the question has a strict word limit on finals.`},
+
+// ─── ASSEMBLY (C10) ───────────────────────────────────────
+{topic:"Assembly", term:"What is the definition of a PERMANENT joint?",
+def:`A joint that CANNOT be separated without destroying the part or the joint itself.
+Not just "difficult to separate" — it must be impossible without destruction.
+
+Examples: Welded joints, adhesive bonds (chemical bond to substrate), rivets (deformed on installation)`},
+
+{topic:"Assembly", term:"Brazing vs soldering — temperature boundary and applications?",
+def:`Brazing: Filler melting point > 450°C. Suitable for almost all metals and some ceramics. Strong structural joints. Joint clearance 0.05–0.15 mm (capillary action). Furnace or torch applied.
+
+Soldering: Filler melting point < 450°C. NOT for load-bearing joints. PCB/electronics applications. More easily reversed with reheating.`},
+
+{topic:"Machining", term:"Wave soldering vs vapor-phase reflow soldering?",
+def:`Wave soldering: Board passes over wave of liquid solder → capillary forces draw solder into through-holes. Used for THROUGH-HOLE components.
+
+Vapor-phase reflow: Fluorocarbon vapor condenses on board → latent heat melts solder paste on SMT pads. Used for SURFACE-MOUNT components (SMT). More uniform heating.`},
+
+{topic:"Assembly", term:"What is GMAW/MIG welding and why is it preferred for robots?",
+def:`GMAW = Gas Metal Arc Welding = MIG (Metal Inert Gas)
+Continuous wire electrode fed automatically → consistent arc length and weld bead.
+Inert gas (Argon) shields weld pool from atmospheric contamination.
+Preferred for robots because: consistent wire feed = predictable process for CP motion control; high deposition rate; suitable for complex path programming.`},
+
+{topic:"Assembly", term:"Spot welding mechanism — how does a weld nugget form?",
+def:`Process: Two electrodes apply PRESSURE while passing high electrical current through the workpieces.
+Mechanism: Electrical resistance generates concentrated heat at the contact point between the sheets → metal locally melts → weld NUGGET forms.
+Electrode pressure is maintained during solidification → compresses the nugget.
+Motion mode: PTP (electrodes contact fixed points). Creates PERMANENT joint.`},
+
+{topic:"Assembly", term:"DFA — Boothroyd's 3-question test for part elimination?",
+def:`1. Does the part MOVE relative to all other assembled parts during operation?
+2. Must the part be made from a DIFFERENT MATERIAL than adjacent parts?
+3. Must the part be SEPARATE to allow assembly or disassembly of other parts?
+
+If ALL three answers are NO → part is a candidate for elimination (combine with adjacent part).
+If ANY answer is YES → part must remain separate.`},
+
+{topic:"Assembly", term:"Production vs assembly — which adds value?",
+def:`Production: Adds VALUE to a product (transforms raw material into finished form — ~$20 value add)
+Assembly: Adds COST (combining parts that were already produced — ~$1 value add)
+
+Implication: Minimize assembly steps, reduce part count (DFA), use automatic assembly where feasible to reduce assembly cost.`},
+
+{topic:"Assembly", term:"Rivets on plastic parts — permanent or non-permanent? Why?",
+def:`PERMANENT
+The rivet is DEFORMED (swaged/upset) during installation. Once deformed, the rivet cannot be returned to its original shape without destroying it. The joint cannot be separated non-destructively.`},
+
+{topic:"Assembly", term:"Adhesive bonding of plastic parts — permanent or non-permanent? Why?",
+def:`PERMANENT
+Adhesive creates a chemical and/or mechanical bond at the molecular level between adhesive and substrate. Separating the joint destroys the bonded surfaces. Cannot be reversed without destroying the mating surfaces.`},
+
+{topic:"Assembly", term:"Bolts and nuts fastening pre-drilled plastic parts — permanent or non-permanent? Why?",
+def:`NON-PERMANENT
+Threaded fasteners can be REMOVED (unfastened) and re-installed without damaging the parts or fasteners. Nothing is fused or chemically bonded — purely mechanical engagement.`},
+
+{topic:"Assembly", term:"Automatic assembly 6-step flow — what is the sequence?",
+def:`1. Sorting — parts separated from bulk, single-file
+2. Orientation — rejection devices pass only correctly oriented parts
+3. Transfer/Feeding — parts transported along feedtrack to station
+4. Metering — escapement presents parts one at a time on demand
+5. Presentation — part positioned precisely for assembly (rotary table, positioner)
+6. Assembly — joining operation performed`},
+
+{topic:"Assembly", term:"What is an escapement in automatic assembly?",
+def:`A metering device that presents parts ONE AT A TIME to the assembly station on demand.
+Types: Slider escapement (linear motion), Ratchet escapement (rotary motion)
+Function: Prevents parts from bunching up — ensures exact quantity (one part) is released per assembly cycle.`},
+
+// ─── WORKHOLDING (C11) ────────────────────────────────────
+{topic:"Workholding", term:"3-2-1 locating rule — which DOF does each group constrain?",
+def:`3 locators on PRIMARY datum (bottom face): Constrains Rx, Ry, and −Dz (3 DOF)
+2 locators on SECONDARY datum (long side face): Constrains Rz and −Dy (2 DOF)
+1 locator on TERTIARY datum (end face): Constrains −Dx (1 DOF)
+
+Total: 6 DOF constrained → part fully located. 12 DOF total (6 pos + 6 neg) → clamping handles remaining 6 (opposite directions).`},
+
+{topic:"Workholding", term:"Fixture vs jig — what is the critical difference?",
+def:`Fixture: Locates and HOLDS the workpiece — provides NO guidance to the manufacturing tool. Used for milling, turning, welding, etc.
+
+Jig: Locates, holds, AND GUIDES the production tool — primarily for hole drilling operations using hardened bushings that guide the drill.
+
+Key: The guidance of the tool is what makes it a jig.`},
+
+{topic:"Workholding", term:"What are the three types of drill bushings in jigs?",
+def:`1. Press-fit bushing: Pressed permanently into jig body. For short production runs, single drill size.
+
+2. Renewable (slip) bushing: Can be replaced — used when multiple operations require different drill diameters at same location.
+
+3. Liner bushing: Hardened hole in jig body that accepts renewable bushings. Protects jig body from wear.`},
+
+{topic:"Workholding", term:"Clamping force direction rule, and what handles the machining forces?",
+def:`Clamping forces must be directed TOWARD a locator (support point) — never into free space.
+
+Manufacturing (machining) forces should be counteracted by LOCATORS, not by clamps. Locators are rigid supports; clamps mainly prevent lifting/separation.
+
+Consequence: Position clamps and orient machining direction so cutting forces push the part INTO locators.`},
+
+{topic:"Workholding", term:"When do you need TWO setups instead of one?",
+def:`Two setups required when:
+• Features are on DIFFERENT FACES requiring different machining directions
+• A clamp blocks tool access to a feature (e.g., right-face clamp blocks drilling from the right)
+• The fixture for operation 1 would prevent cutting tool access for operation 2
+
+Solution: Complete all features accessible in Setup 1, then reposition/refixture for Setup 2.`},
+
+{topic:"Workholding", term:"Can a single locator constrain two DOF simultaneously?",
+def:`NO. A point locator (button/pin) is a SINGLE CONTACT POINT — it can only push back in ONE direction, constraining ONE translational DOF.
+
+Common mistake: Placing a locator at a corner and claiming it constrains two directions (e.g., left AND bottom). A corner locator contacts ONE surface at a time → ONE DOF. Use separate locators for each direction.`},
+
+// ─── MH & ROBOTS (C12) ───────────────────────────────────
+{topic:"MH & Robots", term:"Does materials handling add value to a product?",
+def:`NO — Materials handling adds COST only. It does not transform the product.
+
+Goal of MH: Efficient movement of goods for:
+• On-time delivery
+• Of correct parts
+• In exact quantities
+• To desired locations
+— at minimum handling cost.
+
+Implication: Minimize MH distance, eliminate unnecessary moves, automate high-frequency routes.`},
+
+{topic:"MH & Robots", term:"What is the primary advantage of AGVs over fixed conveyors?",
+def:`REPROGRAMMABILITY — AGV paths are uploaded wirelessly (RF) and can be changed without any physical infrastructure modification.
+
+Fixed conveyors require physical reinstallation to change routes.
+AGVs: Driverless, flexible path, multiple vehicle types (forklift AGV, towing, unit-load carrier)
+Best for: Facilities with changing product mix or layout`},
+
+{topic:"MH & Robots", term:"Three classifications of MH equipment?",
+def:`1. Above-floor: Belt/roller conveyors, lift trucks, tow tractors, AGVs — for packages, palletized goods
+2. On-floor: Towline conveyors (chain in shallow floor trenches) — for large/heavy goods on continuous flow
+3. Overhead: Overhead chain conveyors — maximize 3D workspace, keep floor clear; used for spray painting`},
+
+{topic:"MH & Robots", term:"Compare robot configurations: Rectangular, Cylindrical, Spherical, SCARA?",
+def:`Rectangular/Cartesian (3 linear joints): Best REPEATABILITY; Gantry = best structural stiffness + payload
+Cylindrical (1 rotary + 2 linear): Fast peripheral access; cylindrical work envelope
+Spherical (2 rotary + 1 linear): Fast reach-in; compact; spherical work envelope
+SCARA (Selective Compliant Assembly Robot Arm): Cylindrical variant; high-speed precision assembly; selective compliance in horizontal plane`},
+
+{topic:"MH & Robots", term:"PTP motion vs CP motion — definition, when to use each?",
+def:`PTP (Point-to-Point): Only START and END positions controlled. Path between them is uncontrolled (joints move at max speed independently). FASTEST motion.
+Use for: Spot welding, pick & place, machine loading/unloading
+
+CP (Continuous Path): ENTIRE trajectory controlled — position at every instant is defined.
+Use for: Arc welding (torch must follow seam), spray painting, contouring machining`},
+
+{topic:"MH & Robots", term:"What is BIW (Body-in-White)?",
+def:`Body-in-White = the fully welded vehicle body structure including all sheet metal panels, but EXCLUDING:
+• Moving parts (doors, hood, trunk lid)
+• Interior trim and seats
+• Powertrain and chassis subassemblies
+• Glass
+
+BIW is produced in the Body Shop (welding) after the Press Shop (stamping). It is the primary structural frame of the vehicle.`},
+
+{topic:"MH & Robots", term:"Automobile assembly shop sequence — in order?",
+def:`1. Press Shop: Metal coils → stamped/formed into individual panels
+2. Body Shop: Panels welded together into BIW (Body-in-White)
+3. Paint Shop: Treatment → primer → final coat; overhead conveyors; robotic painting
+4. Final Body Assembly: Dashboard, windshield, powertrain, doors, final inspection (most complex, hardest to automate)`},
+
+{topic:"MH & Robots", term:"Why is final body assembly the hardest step to automate?",
+def:`Final assembly requires HIGH DEXTERITY operations:
+• Installing flexible wiring harnesses
+• Fitting the dashboard (complex shape, confined space)
+• Inserting windshields (fragile, precise alignment)
+• Connecting powertrain to body
+• Fitting doors to hinges
+
+These tasks have high variability, require force sensing and fine manipulation — difficult to program robots for. Augmented Reality is emerging to assist human workers.`},
+
+{topic:"MH & Robots", term:"What is a robot positioner vs a robot?",
+def:`Positioner: A NON-REPROGRAMMABLE pick-and-place mechanism. Fixed motion sequence, PTP only, 1–3 axes. Cannot be reprogrammed for different tasks.
+
+Robot (ISO definition): An automatically controlled, REPROGRAMMABLE, multi-purpose manipulative machine with several degrees of freedom.
+
+Key distinction: Reprogrammability — a positioner does one fixed motion; a robot can be reprogrammed for different tasks/paths.`},
+
+// ─── SURFACE FINISH ───────────────────────────────────────
+{topic:"Surface Finish", term:"Ra (Roughness Average) — formula and interpretation?",
+def:`Ra = (1/n) × Σ|yᵢ − ȳ|
+• n = number of measurement points
+• yᵢ = height at each point
+• ȳ = mean line height
+
+Interpretation: Average absolute deviation from mean line. Lower Ra = smoother surface.
+Step 1: Calculate mean (ȳ). Step 2: Find deviations. Step 3: Take absolute values. Step 4: Average.`},
+
+{topic:"Surface Finish", term:"Rq (RMS Roughness) — formula and how it differs from Ra?",
+def:`Rq = √[(1/n) × Σ(yᵢ − ȳ)²]
+Same steps as Ra but SQUARE the deviations → take mean → take square root.
+
+Key difference: Squaring gives more weight to LARGE deviations (peaks/deep valleys). Rq is always ≥ Ra. Rq/Ra ≈ 1.1–1.4 for typical surfaces. Use Rq when sensitivity to surface defects (scratches, peaks) matters more than average roughness.`},
+
+{topic:"Surface Finish", term:"Which single point adjustment reduces Ra the most?",
+def:`Target the point with the LARGEST ABSOLUTE DEVIATION from the mean line (|yᵢ − ȳ| is maximum).
+Moving that point to the mean line removes the largest contribution to the Ra sum.
+If two points tie for max deviation, either is equally optimal (same Ra improvement).
+For Rq: same answer — the point with max |deviation| also contributes most to the squared sum.`},
+
+{topic:"Surface Finish", term:"Grinding → Honing → Lapping — rank from roughest to smoothest?",
+def:`Roughest to smoothest: Grinding > Honing > Lapping
+• Grinding: removes most material, Ra ~0.4–6.3 μm
+• Honing: ~2× better than grinding, for internal bores (Ra ~0.1–1.6 μm)
+• Lapping: finest; flat precision surfaces (Ra ~0.01–0.4 μm)
+
+Investment casting achieves ~1–6 μm Ra — comparable to grinding, much better than sand casting.`},
+];
+
+// ============================================================
+//  APP STATE
+// ============================================================
+let currentTopic = 'all';
+let filteredCards = [];
+let currentMode = 'flashcard';
+
+// Flashcard state
+let fcIndex = 0;
+let fcKnown = new Set();
+let fcUnknown = new Set();
+let fcFlipped = false;
+
+// Learn state
+let learnQueue = [];
+let learnIndex = 0;
+let learnScore = 0;
+let learnTotal = 0;
+let learnAnswered = false;
+
+// Match state
+let matchSelected = null;
+let matchMatched = new Set();
+let matchStartTime = null;
+let matchPairs = [];
+
+// Test state
+let testCards = [];
+
+// ============================================================
+//  TOPIC FILTER
+// ============================================================
+function setTopic(topic) {
+  currentTopic = topic;
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  filteredCards = topic === 'all' ? [...ALL_CARDS] : ALL_CARDS.filter(c => c.topic === topic);
+  document.getElementById('header-meta').textContent = filteredCards.length + ' cards';
+  resetCurrentMode();
+}
+
+function resetCurrentMode() {
+  if (currentMode === 'flashcard') initFlashcard();
+  else if (currentMode === 'learn') startLearn();
+  else if (currentMode === 'match') startMatch();
+  else if (currentMode === 'test') startTest();
+}
+
+// ============================================================
+//  MODE SWITCHING
+// ============================================================
+function setMode(mode) {
+  currentMode = mode;
+  ['flashcard','learn','match','test'].forEach(m => {
+    document.getElementById('mode-' + m).style.display = 'none';
+    document.getElementById('tab-' + m).classList.remove('active');
+  });
+  document.getElementById('mode-' + mode).style.display = 'block';
+  document.getElementById('tab-' + mode).classList.add('active');
+  resetCurrentMode();
+}
+
+// ============================================================
+//  FLASHCARD MODE
+// ============================================================
+function initFlashcard() {
+  fcIndex = 0; fcKnown.clear(); fcUnknown.clear(); fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  renderFlashcard();
+}
+
+function renderFlashcard() {
+  if (!filteredCards.length) return;
+  const card = filteredCards[fcIndex];
+  document.getElementById('fc-topic').textContent = card.topic;
+  document.getElementById('fc-topic-back').textContent = card.topic;
+  document.getElementById('fc-term').textContent = card.term;
+  document.getElementById('fc-def').textContent = card.def;
+  document.getElementById('fc-counter').textContent = (fcIndex+1) + ' / ' + filteredCards.length;
+  document.getElementById('fc-progress-label').textContent = 'Card ' + (fcIndex+1) + ' of ' + filteredCards.length;
+  document.getElementById('fc-known-label').textContent = 'Known: ' + fcKnown.size;
+  const pct = ((fcIndex+1) / filteredCards.length * 100).toFixed(0);
+  document.getElementById('fc-progress-bar').style.width = pct + '%';
+  document.getElementById('fc-prev').disabled = fcIndex === 0;
+  document.getElementById('fc-next').disabled = fcIndex === filteredCards.length - 1;
+  document.getElementById('known-count').textContent = fcKnown.size + ' known';
+  document.getElementById('unknown-count').textContent = fcUnknown.size + ' still learning';
+  // Reset flip
+  fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+}
+
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', fcFlipped);
+}
+function prevCard() { if (fcIndex > 0) { fcIndex--; renderFlashcard(); } }
+function nextCard() { if (fcIndex < filteredCards.length-1) { fcIndex++; renderFlashcard(); } }
+function shuffleCards() {
+  filteredCards = [...filteredCards].sort(() => Math.random() - .5);
+  fcIndex = 0; fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  renderFlashcard();
+}
+function markCard(known) {
+  const id = filteredCards[fcIndex].term;
+  if (known) { fcKnown.add(id); fcUnknown.delete(id); }
+  else { fcUnknown.add(id); fcKnown.delete(id); }
+  renderFlashcard();
+  if (fcIndex < filteredCards.length-1) { fcIndex++; renderFlashcard(); }
+}
+
+// ============================================================
+//  LEARN MODE (multiple choice)
+// ============================================================
+function startLearn() {
+  learnQueue = shuffle([...filteredCards]);
+  learnIndex = 0; learnScore = 0; learnTotal = 0; learnAnswered = false;
+  document.getElementById('learn-completion').style.display = 'none';
+  document.querySelector('#mode-learn .learn-question').style.display = '';
+  document.querySelector('#mode-learn .learn-options').style.display = '';
+  renderLearnQ();
+}
+
+function renderLearnQ() {
+  if (learnIndex >= learnQueue.length) {
+    document.querySelector('#mode-learn .learn-question').style.display = 'none';
+    document.getElementById('learn-options').style.display = 'none';
+    document.getElementById('learn-feedback').style.display = 'none';
+    document.getElementById('learn-next-btn').style.display = 'none';
+    document.getElementById('learn-completion').style.display = 'block';
+    document.getElementById('learn-final-score').textContent = learnScore + ' / ' + learnTotal + ' correct (' + Math.round(learnScore/learnTotal*100) + '%)';
+    return;
+  }
+  learnAnswered = false;
+  const card = learnQueue[learnIndex];
+  document.getElementById('learn-topic').textContent = card.topic;
+  document.getElementById('learn-question').textContent = card.term;
+  document.getElementById('learn-feedback').style.display = 'none';
+  document.getElementById('learn-next-btn').style.display = 'none';
+  // Build 4 options: 1 correct + 3 wrong (from same topic if possible)
+  let wrong = filteredCards.filter(c => c !== card);
+  if (wrong.length < 3) wrong = ALL_CARDS.filter(c => c !== card);
+  wrong = shuffle(wrong).slice(0, 3);
+  const options = shuffle([card, ...wrong]);
+  const container = document.getElementById('learn-options');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'learn-option';
+    btn.textContent = opt.def.length > 120 ? opt.def.substring(0,120) + '…' : opt.def;
+    btn.onclick = () => checkLearnAnswer(btn, opt === card, card);
+    container.appendChild(btn);
+  });
+  const prog = (learnIndex / learnQueue.length * 100).toFixed(0);
+  document.getElementById('learn-progress-bar').style.width = prog + '%';
+  document.getElementById('learn-progress-label').textContent = 'Question ' + (learnIndex+1) + ' of ' + learnQueue.length;
+  document.getElementById('learn-score-label').textContent = 'Score: ' + learnScore + '/' + learnTotal;
+}
+
+function checkLearnAnswer(btn, correct, card) {
+  if (learnAnswered) return;
+  learnAnswered = true; learnTotal++;
+  document.querySelectorAll('.learn-option').forEach(b => { b.classList.add('disabled'); b.onclick = null; });
+  if (correct) {
+    btn.classList.add('correct');
+    learnScore++;
+    const fb = document.getElementById('learn-feedback');
+    fb.className = 'learn-feedback';
+    fb.innerHTML = '<strong>✓ Correct!</strong>';
+    fb.style.display = 'block';
+  } else {
+    btn.classList.add('wrong');
+    const fb = document.getElementById('learn-feedback');
+    fb.className = 'learn-feedback wrong';
+    fb.innerHTML = '<strong>✗ Incorrect.</strong> Correct answer:<br><br>' + card.def;
+    fb.style.display = 'block';
+    // Highlight correct
+    document.querySelectorAll('.learn-option').forEach(b => {
+      if (b.textContent.startsWith(card.def.substring(0,30))) b.classList.add('correct');
+    });
+  }
+  document.getElementById('learn-next-btn').style.display = 'inline-flex';
+}
+
+function nextLearnQ() {
+  learnIndex++;
+  renderLearnQ();
+}
+
+// ============================================================
+//  MATCH MODE
+// ============================================================
+function startMatch() {
+  const pool = shuffle([...filteredCards]).slice(0, 6); // 6 pairs = 12 cards
+  matchPairs = pool;
+  matchSelected = null;
+  matchMatched.clear();
+  matchStartTime = Date.now();
+  document.getElementById('match-total').textContent = pool.length;
+  document.getElementById('match-count').textContent = 0;
+  document.getElementById('match-completion').style.display = 'none';
+  document.getElementById('match-grid').style.display = 'grid';
+  renderMatchGrid();
+}
+
+function renderMatchGrid() {
+  const terms = matchPairs.map((c,i) => ({text: c.term, id: i, side: 'term'}));
+  const defs = matchPairs.map((c,i) => ({text: c.def.length > 100 ? c.def.substring(0,100)+'…' : c.def, id: i, side: 'def'}));
+  const all = shuffle([...terms, ...defs]);
+  const grid = document.getElementById('match-grid');
+  grid.innerHTML = '';
+  all.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'match-card';
+    card.textContent = item.text;
+    card.dataset.id = item.id;
+    card.dataset.side = item.side;
+    card.dataset.idx = idx;
+    card.onclick = () => selectMatchCard(card);
+    grid.appendChild(card);
+  });
+}
+
+function selectMatchCard(card) {
+  if (card.classList.contains('matched')) return;
+  if (matchSelected === null) {
+    card.classList.add('selected');
+    matchSelected = card;
+  } else if (matchSelected === card) {
+    card.classList.remove('selected');
+    matchSelected = null;
+  } else {
+    const a = matchSelected, b = card;
+    const sameId = a.dataset.id === b.dataset.id;
+    const diffSide = a.dataset.side !== b.dataset.side;
+    if (sameId && diffSide) {
+      a.classList.remove('selected'); a.classList.add('matched');
+      b.classList.add('matched');
+      matchMatched.add(a.dataset.id);
+      matchSelected = null;
+      document.getElementById('match-count').textContent = matchMatched.size;
+      if (matchMatched.size === matchPairs.length) {
+        const t = ((Date.now() - matchStartTime)/1000).toFixed(1);
+        setTimeout(() => {
+          document.getElementById('match-grid').style.display = 'none';
+          document.getElementById('match-completion').style.display = 'block';
+          document.getElementById('match-time').textContent = 'Completed in ' + t + ' seconds';
+        }, 400);
+      }
+    } else {
+      a.classList.add('wrong-flash'); b.classList.add('wrong-flash');
+      setTimeout(() => { a.classList.remove('wrong-flash','selected'); b.classList.remove('wrong-flash'); }, 400);
+      matchSelected = null;
+    }
+  }
+}
+
+// ============================================================
+//  TEST MODE
+// ============================================================
+function startTest() {
+  testCards = shuffle([...filteredCards]).slice(0, 10);
+  document.getElementById('test-summary').style.display = 'none';
+  document.getElementById('test-actions').style.display = 'flex';
+  const container = document.getElementById('test-questions');
+  container.innerHTML = '';
+  testCards.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className = 'test-item';
+    div.innerHTML = `
+      <div class="test-q-num">Question ${i+1} of ${testCards.length} · ${card.topic}</div>
+      <div class="test-q-text">${card.term}</div>
+      <textarea class="test-input" placeholder="Type your answer here..." rows="3"></textarea>
+      <div class="test-result" id="test-result-${i}"></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function gradeTest() {
+  let correct = 0;
+  testCards.forEach((card, i) => {
+    const input = document.querySelectorAll('.test-input')[i].value.trim();
+    const resultEl = document.getElementById('test-result-' + i);
+    resultEl.style.display = 'block';
+    // Self-grade: show correct answer, let user judge
+    resultEl.className = 'test-result correct';
+    resultEl.innerHTML = '<strong>Model answer:</strong><br>' + card.def;
+  });
+  document.getElementById('test-actions').style.display = 'none';
+  document.getElementById('test-summary').style.display = 'block';
+  document.getElementById('test-score-pct').textContent = '✓';
+  document.getElementById('test-score-label').textContent = 'Compare your answers to the model answers above';
+}
+
+// ============================================================
+//  UTILS
+// ============================================================
+function shuffle(arr) { return arr.sort(() => Math.random() - .5); }
+
+// ============================================================
+//  INIT
+// ============================================================
+filteredCards = [...ALL_CARDS];
+document.getElementById('header-meta').textContent = filteredCards.length + ' cards';
+initFlashcard();
+</script>
+</body>
+</html>
