@@ -29,7 +29,7 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 .header-meta { font-size: 13px; color: rgba(255,255,255,.65); }
 
 /* LAYOUT */
-.container { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
+.container { max-width: 900px; margin: 0 auto; padding: 28px 20px 160px; }
 
 /* FILTER BAR */
 .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
@@ -61,13 +61,10 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 .card-def { font-size: 16px; line-height: 1.7; color: var(--text); white-space: pre-line; }
 .card-hint { font-size: 12px; color: var(--text-muted); margin-top: 20px; }
 
-.flashcard-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.fc-nav { display: flex; align-items: center; gap: 12px; }
-.fc-btn { background: #fff; border: 1.5px solid var(--border); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; font-size: 18px; }
+.fc-btn { background: #fff; border: 1.5px solid var(--border); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; font-size: 20px; }
 .fc-btn:hover { border-color: var(--blue); color: var(--blue); }
 .fc-btn:disabled { opacity: .35; cursor: default; }
-.fc-counter { font-size: 14px; font-weight: 600; color: var(--text-muted); min-width: 60px; text-align: center; }
-.fc-actions { display: flex; gap: 10px; }
+.fc-counter { font-size: 14px; font-weight: 600; color: var(--text-muted); min-width: 80px; text-align: center; }
 .btn { padding: 9px 20px; border-radius: 8px; border: none; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 7px; }
 .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
 .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
@@ -131,6 +128,30 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 .completion h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
 .completion p { color: var(--text-muted); margin-bottom: 24px; }
 
+/* FIXED BOTTOM BAR (flashcard mode) */
+#fc-bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--card-bg);
+  border-top: 1.5px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(66,87,178,.12);
+  padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+#fc-bottom-bar .fc-nav { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
+#fc-bottom-bar .fc-actions { display: flex; gap: 10px; justify-content: center; width: 100%; max-width: 480px; }
+#fc-bottom-bar .fc-actions .btn { flex: 1; justify-content: center; padding: 12px 8px; font-size: 13.5px; }
+
+/* Save toast */
+.save-toast {
+  position: fixed; bottom: 135px; left: 50%; transform: translateX(-50%);
+  background: var(--blue-dark); color: #fff;
+  padding: 7px 18px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 200; white-space: nowrap;
+}
+.save-toast.show { opacity: 1; }
+
 @media (max-width: 600px) {
   .learn-options { grid-template-columns: 1fr; }
   .match-grid { grid-template-columns: 1fr; }
@@ -140,6 +161,7 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 </style>
 </head>
 <body>
+<div class="save-toast" id="save-toast">✓ Progress saved</div>
 <header>
   <h1>MIE221 — Manufacturing Engineering</h1>
   <div class="header-meta" id="header-meta">Loading cards...</div>
@@ -189,21 +211,22 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
         </div>
       </div>
     </div>
-    <div class="flashcard-controls">
+    <div class="known-counter">
+      <div class="known-counter-item"><div class="dot dot-green"></div><span id="known-count">0 known</span></div>
+      <div class="known-counter-item"><div class="dot dot-red"></div><span id="unknown-count">0 still learning</span></div>
+    </div>
+    <!-- FIXED BOTTOM NAVIGATION -->
+    <div id="fc-bottom-bar">
       <div class="fc-nav">
         <button class="fc-btn" id="fc-prev" onclick="prevCard()" title="Previous">‹</button>
         <span class="fc-counter" id="fc-counter">1 / 0</span>
         <button class="fc-btn" id="fc-next" onclick="nextCard()" title="Next">›</button>
       </div>
       <div class="fc-actions">
-        <button class="btn btn-outline" onclick="shuffleCards()">🔀 Shuffle</button>
         <button class="btn btn-red" onclick="markCard(false)">✗ Still learning</button>
+        <button class="btn btn-outline" onclick="shuffleCards()">🔀</button>
         <button class="btn btn-green" onclick="markCard(true)">✓ Know it</button>
       </div>
-    </div>
-    <div class="known-counter">
-      <div class="known-counter-item"><div class="dot dot-green"></div><span id="known-count">0 known</span></div>
-      <div class="known-counter-item"><div class="dot dot-red"></div><span id="unknown-count">0 still learning</span></div>
     </div>
   </div>
 
@@ -856,8 +879,10 @@ function setMode(mode) {
 // ============================================================
 //  FLASHCARD MODE
 // ============================================================
-function initFlashcard() {
-  fcIndex = 0; fcKnown.clear(); fcUnknown.clear(); fcFlipped = false;
+function initFlashcard(resetKnown = false) {
+  fcIndex = 0;
+  if (resetKnown) { fcKnown.clear(); fcUnknown.clear(); }
+  fcFlipped = false;
   document.getElementById('flashcard').classList.remove('flipped');
   renderFlashcard();
 }
@@ -887,13 +912,14 @@ function flipCard() {
   fcFlipped = !fcFlipped;
   document.getElementById('flashcard').classList.toggle('flipped', fcFlipped);
 }
-function prevCard() { if (fcIndex > 0) { fcIndex--; renderFlashcard(); } }
-function nextCard() { if (fcIndex < filteredCards.length-1) { fcIndex++; renderFlashcard(); } }
+function prevCard() { if (fcIndex > 0) { fcIndex--; renderFlashcard(); saveProgress(); } }
+function nextCard() { if (fcIndex < filteredCards.length-1) { fcIndex++; renderFlashcard(); saveProgress(); } }
 function shuffleCards() {
   filteredCards = [...filteredCards].sort(() => Math.random() - .5);
   fcIndex = 0; fcFlipped = false;
   document.getElementById('flashcard').classList.remove('flipped');
   renderFlashcard();
+  saveProgress();
 }
 function markCard(known) {
   const id = filteredCards[fcIndex].term;
@@ -901,6 +927,7 @@ function markCard(known) {
   else { fcUnknown.add(id); fcKnown.delete(id); }
   renderFlashcard();
   if (fcIndex < filteredCards.length-1) { fcIndex++; renderFlashcard(); }
+  saveProgress();
 }
 
 // ============================================================
@@ -1088,6 +1115,55 @@ function gradeTest() {
 }
 
 // ============================================================
+//  PERSISTENCE (localStorage)
+// ============================================================
+const STORAGE_KEY = 'mie221_fc_v1';
+
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      known: [...fcKnown],
+      unknown: [...fcUnknown],
+      fcIndex,
+      topic: currentTopic,
+      savedAt: new Date().toISOString()
+    }));
+    showSaved();
+  } catch(e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.topic) {
+      currentTopic = d.topic;
+      filteredCards = currentTopic === 'all' ? [...ALL_CARDS] : ALL_CARDS.filter(c => c.topic === currentTopic);
+      document.querySelectorAll('.topic-btn').forEach(b => {
+        const onclick = b.getAttribute('onclick') || '';
+        const isAll = currentTopic === 'all' && b.textContent.trim() === 'All';
+        const isMatch = onclick.includes("'" + currentTopic + "'");
+        b.classList.toggle('active', isAll || isMatch);
+      });
+      document.getElementById('header-meta').textContent = filteredCards.length + ' cards';
+    }
+    if (d.known) fcKnown = new Set(d.known);
+    if (d.unknown) fcUnknown = new Set(d.unknown);
+    if (typeof d.fcIndex === 'number') fcIndex = Math.min(d.fcIndex, Math.max(0, filteredCards.length - 1));
+  } catch(e) {}
+}
+
+let _saveTimer = null;
+function showSaved() {
+  const el = document.getElementById('save-toast');
+  if (!el) return;
+  el.classList.add('show');
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ============================================================
 //  UTILS
 // ============================================================
 function shuffle(arr) { return arr.sort(() => Math.random() - .5); }
@@ -1097,7 +1173,8 @@ function shuffle(arr) { return arr.sort(() => Math.random() - .5); }
 // ============================================================
 filteredCards = [...ALL_CARDS];
 document.getElementById('header-meta').textContent = filteredCards.length + ' cards';
-initFlashcard();
+loadProgress();
+renderFlashcard();
 </script>
 </body>
 </html>
