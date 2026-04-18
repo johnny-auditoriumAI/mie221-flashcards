@@ -142,6 +142,12 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 #fc-bottom-bar .fc-actions { display: flex; gap: 10px; justify-content: center; width: 100%; max-width: 480px; }
 #fc-bottom-bar .fc-actions .btn { flex: 1; justify-content: center; padding: 12px 8px; font-size: 13.5px; }
 
+/* REVIEW MODE BANNER */
+#review-banner { display: none; background: #fdf0f0; border: 1.5px solid var(--red); border-radius: 10px; padding: 10px 16px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 12px; }
+#review-banner span { font-size: 13px; font-weight: 700; color: var(--red); }
+.review-btn { font-size: 12.5px !important; padding: 5px 14px !important; color: var(--red) !important; border-color: var(--red) !important; display: none; }
+.review-btn:hover { background: #fdf0f0 !important; }
+
 /* Save toast */
 .save-toast {
   position: fixed; bottom: 135px; left: 50%; transform: translateX(-50%);
@@ -198,6 +204,10 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
       <span id="fc-known-label">Known: 0</span>
     </div>
     <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fc-progress-bar" style="width:0%"></div></div>
+    <div id="review-banner">
+      <span id="review-banner-text">📚 Reviewing still-learning cards</span>
+      <button class="btn btn-outline" onclick="exitReviewMode()" style="font-size:12px;padding:6px 14px">✕ Exit</button>
+    </div>
     <div class="flashcard-wrap" onclick="flipCard()">
       <div class="flashcard" id="flashcard">
         <div class="flashcard-front">
@@ -214,6 +224,7 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
     <div class="known-counter">
       <div class="known-counter-item"><div class="dot dot-green"></div><span id="known-count">0 known</span></div>
       <div class="known-counter-item"><div class="dot dot-red"></div><span id="unknown-count">0 still learning</span></div>
+      <button class="btn btn-outline review-btn" id="review-btn" onclick="reviewStillLearning()">📚 Review</button>
     </div>
     <!-- FIXED BOTTOM NAVIGATION -->
     <div id="fc-bottom-bar">
@@ -826,6 +837,7 @@ let fcIndex = 0;
 let fcKnown = new Set();
 let fcUnknown = new Set();
 let fcFlipped = false;
+let reviewMode = false;
 
 // Learn state
 let learnQueue = [];
@@ -903,6 +915,12 @@ function renderFlashcard() {
   document.getElementById('fc-next').disabled = fcIndex === filteredCards.length - 1;
   document.getElementById('known-count').textContent = fcKnown.size + ' known';
   document.getElementById('unknown-count').textContent = fcUnknown.size + ' still learning';
+  // Review button: show when there are still-learning cards and not already in review mode
+  const reviewBtn = document.getElementById('review-btn');
+  if (reviewBtn) {
+    reviewBtn.style.display = (!reviewMode && fcUnknown.size > 0) ? 'flex' : 'none';
+    reviewBtn.textContent = '📚 Review (' + fcUnknown.size + ')';
+  }
   // Reset flip
   fcFlipped = false;
   document.getElementById('flashcard').classList.remove('flipped');
@@ -925,9 +943,49 @@ function markCard(known) {
   const id = filteredCards[fcIndex].term;
   if (known) { fcKnown.add(id); fcUnknown.delete(id); }
   else { fcUnknown.add(id); fcKnown.delete(id); }
-  renderFlashcard();
-  if (fcIndex < filteredCards.length-1) { fcIndex++; renderFlashcard(); }
+
+  if (reviewMode && known) {
+    // Remove this card from the review deck — it's been learned
+    filteredCards.splice(fcIndex, 1);
+    if (filteredCards.length === 0) {
+      // All still-learning cards are now known — exit review
+      exitReviewMode(true);
+      saveProgress();
+      return;
+    }
+    if (fcIndex >= filteredCards.length) fcIndex = filteredCards.length - 1;
+    renderFlashcard();
+  } else {
+    renderFlashcard();
+    if (fcIndex < filteredCards.length - 1) { fcIndex++; renderFlashcard(); }
+  }
   saveProgress();
+}
+
+function reviewStillLearning() {
+  const pool = (currentTopic === 'all' ? [...ALL_CARDS] : ALL_CARDS.filter(c => c.topic === currentTopic))
+    .filter(c => fcUnknown.has(c.term));
+  if (pool.length === 0) return;
+  reviewMode = true;
+  filteredCards = shuffle([...pool]);
+  fcIndex = 0; fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  const banner = document.getElementById('review-banner');
+  banner.style.display = 'flex';
+  document.getElementById('review-banner-text').textContent = '📚 Reviewing ' + pool.length + ' still-learning card' + (pool.length === 1 ? '' : 's');
+  renderFlashcard();
+}
+
+function exitReviewMode(allLearned = false) {
+  reviewMode = false;
+  filteredCards = currentTopic === 'all' ? [...ALL_CARDS] : ALL_CARDS.filter(c => c.topic === currentTopic);
+  fcIndex = 0; fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('review-banner').style.display = 'none';
+  if (allLearned) {
+    document.getElementById('review-banner-text').textContent = '📚 Reviewing still-learning cards';
+  }
+  renderFlashcard();
 }
 
 // ============================================================
