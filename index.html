@@ -37,6 +37,7 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 .topic-btn { border: 1.5px solid var(--border); background: #fff; color: var(--text-muted); padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .15s; }
 .topic-btn:hover { border-color: var(--blue); color: var(--blue); }
 .topic-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.topic-btn.active.math-btn { background: var(--yellow); border-color: var(--yellow); color: #fff; }
 
 /* MODE TABS */
 .mode-tabs { display: flex; gap: 4px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
@@ -187,6 +188,7 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
     <button class="topic-btn" onclick="setTopic('Workholding')">Workholding</button>
     <button class="topic-btn" onclick="setTopic('MH & Robots')">MH & Robots</button>
     <button class="topic-btn" onclick="setTopic('Surface Finish')">Surface Finish</button>
+    <button class="topic-btn" onclick="setTopic('Math & Design')" style="border-color:#f7b731;color:#b8860b">🧮 Math & Design</button>
   </div>
 
   <!-- MODE TABS -->
@@ -823,6 +825,322 @@ def:`Roughest to smoothest: Grinding > Honing > Lapping
 • Lapping: finest; flat precision surfaces (Ra ~0.01–0.4 μm)
 
 Investment casting achieves ~1–6 μm Ra — comparable to grinding, much better than sand casting.`},
+
+// ─── MATH & DESIGN ────────────────────────────────────────
+{topic:"Math & Design", term:"CASTING MATH — Bernoulli sprue taper: step-by-step procedure to find v₂ and d₂.",
+def:`Given: sprue top height h₁, top diameter d₁, pouring basin (v₁ ≈ 0), datum at sprue bottom.
+
+Step 1 — Find v₂ using simplified Bernoulli:
+  h₁ + v₁²/2g = v₂²/2g
+  → v₂ = √(2g·h₁ + v₁²)  (if v₁ ≈ 0: v₂ = √(2g·h₁))
+
+Step 2 — Find A₂ using continuity Q = A₁v₁ = A₂v₂:
+  A₂ = A₁ × (v₁/v₂)
+
+Step 3 — Find d₂:
+  d₂ = d₁ × √(v₁/v₂)
+
+Units: h in metres, g = 9.81 m/s², v in m/s, d in mm (convert consistently)`},
+
+{topic:"Math & Design", term:"CASTING MATH — Bernoulli worked example: h₁ = 200 mm, d₁ = 4 mm, v₁ = 0.5 m/s. Find v₂ and d₂.",
+def:`h₁ = 0.2 m, g = 9.81 m/s²
+
+Step 1 — v₂:
+  v₂ = √(2×9.81×0.2 + 0.5²) = √(3.924 + 0.25) = √4.174 = 2.043 m/s
+
+Step 2 — A₂/A₁:
+  A₂ = A₁ × (v₁/v₂) = A₁ × (0.5/2.043) = 0.2448 A₁
+
+Step 3 — d₂:
+  d₂ = d₁ × √(v₁/v₂) = 4 × √(0.5/2.043) = 4 × 0.4948 = 1.98 mm
+
+Answer: v₂ = 2.04 m/s, d₂ ≈ 1.98 mm`},
+
+{topic:"Math & Design", term:"CASTING MATH — Chvorinov's rule: formula, purpose, and riser design rule.",
+def:`ts = C × (V/SA)²
+  ts = solidification time, V = volume, SA = surface area, C = mold constant
+
+Purpose: Predict solidification time from geometry.
+Higher V/SA → slower solidification.
+
+Riser design rule:
+  (V/SA)_riser > (V/SA)_casting
+→ riser must solidify AFTER the casting.
+
+Most efficient riser shape: SPHERE (maximizes V/SA).
+Compare: cube (V/SA = L/6), sphere (V/SA = r/3).
+
+If casting V/SA = 8 mm → choose riser V/SA ≥ 8 mm.`},
+
+{topic:"Math & Design", term:"FORMING MATH — Forging force: step-by-step with a worked example.",
+def:`Formula: F = Ks × Yf × Ap
+
+Example: Ks = 6.5, Yf = 250 MPa, part d = 180 mm, flash width = 5 mm.
+
+Step 1 — Total diameter including flash:
+  d_total = 180 + 2×5 = 190 mm
+
+Step 2 — Projected area (circle):
+  Ap = π/4 × 190² = π/4 × 36,100 = 28,353 mm²
+
+Step 3 — Force:
+  F = 6.5 × 250 × 28,353 = 46,076,250 N ≈ 46,076 kN ≈ 46.1 MN
+
+Key: Always use diameter INCLUDING flash for Ap.`},
+
+{topic:"Math & Design", term:"FORMING MATH — Rolling key formulas: draft, reduction, true strain, contact length.",
+def:`Draft:         d = t₀ − tf
+% Reduction:   r = d/t₀ × 100%
+True strain:   ε = ln(t₀/tf)
+Contact length: L = √(R·d)   (R = roll radius)
+
+Volume conservation (width ~constant):
+  t₀ × L₀ = tf × Lf  →  Lf/L₀ = t₀/tf (elongation ratio)
+
+Example: t₀=20mm, tf=16mm, R=300mm
+  d=4mm, r=20%, ε=ln(20/16)=0.223, L=√(300×4)=34.6mm`},
+
+{topic:"Math & Design", term:"FORMING MATH — Extrusion ratio R and true strain.",
+def:`Extrusion ratio: R = A₀/Af
+  A₀ = billet cross-section area, Af = extrudate cross-section area
+
+True strain: ε = ln(R)
+
+Example: Billet d=100mm → rod d=20mm
+  R = (π/4×100²)/(π/4×20²) = 10000/400 = 25
+  ε = ln(25) = 3.22
+
+Higher R → more deformation, higher force.
+Typical: Al alloys R up to 400; steel R up to ~40.
+Indirect extrusion: same R, lower force (no billet-container friction).`},
+
+{topic:"Math & Design", term:"FORMING MATH — Blanking/punching force formula.",
+def:`F = S × t × L
+  S = shear strength ≈ 0.7 × UTS (MPa)
+  t = sheet thickness (mm)
+  L = total perimeter of cut (mm)
+
+Example: Steel UTS=400MPa, t=3mm, circular blank d=50mm
+  S = 0.7 × 400 = 280 MPa
+  L = π × 50 = 157 mm
+  F = 280 × 3 × 157 = 131,880 N ≈ 132 kN
+
+Force reduction: bevel punch (oblique angle) staggers cut.
+⚠ Bevel punch → distorted blank edge → not for final parts.`},
+
+{topic:"Math & Design", term:"MACHINING MATH — Turning calculations: depth of cut, cutting speed, MRR, machining time.",
+def:`Depth of cut:     a = (d₁ − d₂)/2
+Cutting speed:    V = π × N × d_avg / 1000  (m/min)  [d in mm]
+MRR:              MRR = V × f × a  (mm³/min, with V in mm/min)
+Machining time:   tm = L / (f × N)  (min)
+
+Example: d₁=50mm, d₂=46mm, L=150mm, N=600rpm, f=0.25mm/rev
+  a = (50−46)/2 = 2 mm
+  V = π×600×48/1000 = 90.5 m/min
+  tm = 150/(0.25×600) = 1.0 min`},
+
+{topic:"Math & Design", term:"MACHINING MATH — Taylor's tool life equation: formula, finding C, solving for T at new speed.",
+def:`Taylor's equation: V × Tⁿ = C
+  V = cutting speed (m/min), T = tool life (min)
+  n = Taylor exponent (material constant, typ. 0.1–0.5)
+  C = speed for T = 1 min
+
+Step 1: Find C from known condition:  C = V₁ × T₁ⁿ
+
+Step 2: Find T₂ at new speed V₂:
+  T₂ = (C/V₂)^(1/n)  OR  T₂ = T₁ × (V₁/V₂)^(1/n)
+
+Example: V₁=100m/min, T₁=60min, n=0.25. Find T at V=125m/min.
+  C = 100×60^0.25 = 100×2.783 = 278.3
+  T₂ = (278.3/125)^(1/0.25) = 2.226⁴ = 24.6 min`},
+
+{topic:"Math & Design", term:"MACHINING MATH — Ideal theoretical surface roughness for turning (nose radius tool).",
+def:`Ra_ideal = f² / (32R)
+  f = feed (mm/rev), R = tool nose radius (mm)
+
+This gives the THEORETICAL MINIMUM Ra from tool geometry alone.
+Actual Ra is higher due to: BUE, vibration, built-up edge, material side flow.
+
+Example: f=0.2mm/rev, R=0.8mm
+  Ra_ideal = 0.2²/(32×0.8) = 0.04/25.6 = 0.00156 mm = 1.56 μm
+
+To reduce Ra: decrease feed f (quadratic effect) OR increase nose radius R.
+Trade-off: large R → increased radial force → more vibration risk.`},
+
+{topic:"Math & Design", term:"MACHINING MATH — G-ratio (grinding ratio): what it measures and formula.",
+def:`G = Volume of workpiece removed / Volume of wheel worn away
+
+High G → wheel lasts long relative to metal removed (efficient).
+Low G → wheel wears quickly (soft workpiece or wrong wheel grade).
+
+Harder workpiece → lower G (more wheel wear).
+Harder wheel grade → higher G (but risk of glazing if too hard).
+
+Typical G values:
+  Conventional grinding: G = 20–80
+  cBN wheels: G = 100–1000+ (much more durable)
+
+Used to assess wheel selection and predict wheel consumption.`},
+
+{topic:"Math & Design", term:"ASSEMBLY MATH — DFA Boothroyd efficiency formula: calculate and interpret.",
+def:`E = (3 × NM) / tA
+  NM = minimum number of theoretically necessary parts
+  tA = actual total assembly time (seconds)
+  3 = assumed ideal time per part (seconds)
+
+Example: 20 parts assembled, tA = 150 s, NM = 7 (after 3-question test)
+  E = (3 × 7) / 150 = 21/150 = 0.14 = 14%
+
+Interpretation:
+  E < 0.3 → poor design, significant redesign opportunity
+  E ≈ 0.3–0.6 → reasonable
+  E > 0.6 → excellent (hard to achieve)
+
+Action: apply 3-question test to all non-NM parts → candidates for elimination.`},
+
+{topic:"Math & Design", term:"ASSEMBLY DESIGN — Two-rail feedtrack width for cylindrical parts: sizing calculation.",
+def:`Desired orientation: long axis PERPENDICULAR to feedtrack direction.
+Two-rail supports the cylinder ends while it slides forward.
+
+Track width W:  W = L_part + small clearance (≈ L + 1–2 mm)
+  L_part = length of cylinder
+
+NOT W ≈ d (diameter) — that would give parallel orientation (wrong).
+
+Example: Cylinder d=20mm, L=60mm, desired perpendicular delivery
+  W ≈ 61–62 mm  (slightly wider than L)
+
+If W ≈ 20mm (≈ d): cylinder rolls, orients with axis parallel → incorrect for assembly.`},
+
+{topic:"Math & Design", term:"POLYMERS MATH — Injection molding cooling time formula and dominant variable.",
+def:`tc = (h²_max / π²α) × ln[(4/π) × (Ti − Tm)/(Te − Tm)]
+
+  h_max = maximum wall thickness (DOMINANT variable — tc ∝ h²)
+  α = thermal diffusivity of polymer (mm²/s)
+  Ti = melt injection temperature (°C)
+  Tm = mold wall temperature (°C)
+  Te = ejection temperature (°C)
+
+Key insight: halving wall thickness → ¼ the cooling time.
+Design rule: uniform wall thickness prevents differential shrinkage AND cuts total cycle time.
+
+Full cycle: tT = tf + tc + te  (cooling dominates: ~70–80% of tT)`},
+
+{topic:"Math & Design", term:"PROCESS PLANNING — Operation sequence for a stepped through-hole (small Ø20 + large Ø35, same axis).",
+def:`Correct sequence:
+1. Center drill — establishes precise start point, prevents drill wander
+2. Drill Ø20 — full depth through part
+3. Drill Ø35 — to depth of the large-diameter step only
+
+Why small hole first:
+• Drill follows center drill point precisely
+• Large drill cannot follow a small center drill point — diameter mismatch
+
+Why NOT double center drill:
+• Center drill once. The Ø20 drill entry is guided by the center drill; the Ø35 drill is guided by the Ø20 hole walls.
+
+Never reverse the order — drilling large first leaves no guide for the small drill.`},
+
+{topic:"Math & Design", term:"PROCESS PLANNING — Operation sequence to produce a precision reamed hole (H7 tolerance).",
+def:`1. Center drill — precise location, prevents drill wander
+2. Drill — bulk material removal; leave ~0.3–0.5 mm stock for reaming
+3. Ream — removes small amount, achieves H7 diameter tolerance and fine surface finish
+
+Why not skip steps:
+• Cannot ream without pre-drill — reamer has no drill point, cannot start a hole
+• Cannot skip center drill — drill wanders on curved/hard surface
+
+Tolerances:
+  Drill alone: IT11–IT13 (rough)
+  Drill + Ream: IT6–IT8 (precision, e.g. H7)
+  Drill + Bore: IT5–IT7 (very precise, single-point boring)`},
+
+{topic:"Math & Design", term:"PROCESS PLANNING — Select the operation for each feature: (A) flat top face, (B) side pocket/slot, (C) precision bore, (D) external cylinder.",
+def:`(A) Flat top face → FACE MILLING
+   Cutter axis perpendicular to face; shell mill or face mill; high MRR.
+
+(B) Side pocket / slot → END MILLING
+   Cutter axis perpendicular to slot floor; peripheral + end cutting edges.
+
+(C) Internal precision bore → BORING (or drill → ream for smaller Ø)
+   Single-point tool; achieves tight tolerances (IT5–IT7); corrects hole position.
+
+(D) External cylinder → TURNING
+   Workpiece rotates; single-point tool advances axially.
+
+Mnemonic: Face↔Face mill, Slot↔End mill, Bore↔Bore/Ream, Round→Turn`},
+
+{topic:"Math & Design", term:"PROCESS PLANNING — Two-setup fixture problem: when is a second setup required?",
+def:`Second setup needed when:
+1. Features are on OPPOSING or non-parallel faces (e.g., top face AND right face)
+2. A clamp from Setup 1 BLOCKS tool access for another feature
+3. A locator from Setup 1 sits in the path of the cutting tool
+
+Typical exam scenario:
+  Part has a horizontal hole AND a vertical hole.
+  → Setup 1: clamp top, drill vertical hole
+  → Setup 2: reposition, clamp side, drill horizontal hole
+  (Right-face clamp in Setup 1 blocks horizontal drill approach)
+
+Key rule: Complete all features accessible in Setup 1 before repositioning.`},
+
+{topic:"Math & Design", term:"WORKHOLDING DESIGN — DOF analysis: identify which locator constrains which DOF for a rectangular block.",
+def:`Standard 3-2-1 for a rectangular block (X=length, Y=width, Z=height):
+
+PRIMARY face (bottom, Z-face) — 3 locators:
+  Constrains: −Z translation, +Rx rotation, +Ry rotation
+
+SECONDARY face (long side, Y-face) — 2 locators:
+  Constrains: −Y translation, +Rz rotation
+
+TERTIARY face (end, X-face) — 1 locator:
+  Constrains: −X translation
+
+Clamps provide: +Z, +Y, +X (opposite directions to locators)
+
+Total: 6 locators constrain 6 DOF → fully located (deterministic).
+A 7th locator → OVER-CONSTRAINED (redundant, causes indeterminate contact).`},
+
+{topic:"Math & Design", term:"WORKHOLDING DESIGN — Clamping force calculation: given cutting force, find required clamp force.",
+def:`Principle: Cutting force tries to lift/slide the part; clamp must resist.
+
+For a simple top clamp preventing lift:
+  F_clamp × μ ≥ F_cutting_horizontal  (friction holds against sliding)
+  F_clamp ≥ F_cutting_vertical  (direct resistance to lift)
+
+Safety factor typically 2–3×.
+
+Design rules:
+• Clamp TOWARD locators — never into free space
+• Cutting force direction → INTO a locator (not into a clamp)
+• Clamp as close to cutting zone as possible to minimize moment arm
+• Avoid clamping over unsupported spans (part deflection)`},
+
+{topic:"Math & Design", term:"SURFACE FINISH MATH — Ra worked example: given 6 profile heights, find Ra and best single-point correction.",
+def:`Profile heights (from datum): 3, 7, 2, 8, 4, 6 μm
+
+Step 1 — Mean ȳ = (3+7+2+8+4+6)/6 = 30/6 = 5 μm
+
+Step 2 — Deviations |yᵢ − ȳ|: |3−5|=2, |7−5|=2, |2−5|=3, |8−5|=3, |4−5|=1, |6−5|=1
+
+Step 3 — Ra = (2+2+3+3+1+1)/6 = 12/6 = 2.0 μm
+
+Best correction: adjust the point with LARGEST deviation — either y=2μm or y=8μm (both have |dev|=3). Move either to ȳ=5μm.
+New Ra = (2+2+0+3+1+1)/6 = 1.50 μm  OR  (2+2+3+0+1+1)/6 = 1.50 μm`},
+
+{topic:"Math & Design", term:"SURFACE FINISH MATH — Rq worked example (same profile): find Rq and compare to Ra.",
+def:`Profile: 3, 7, 2, 8, 4, 6 μm  |  ȳ = 5 μm
+
+Step 1 — Squared deviations (yᵢ − ȳ)²:
+  (3−5)²=4, (7−5)²=4, (2−5)²=9, (8−5)²=9, (4−5)²=1, (6−5)²=1
+
+Step 2 — Mean of squares = (4+4+9+9+1+1)/6 = 28/6 = 4.667 μm²
+
+Step 3 — Rq = √4.667 = 2.16 μm
+
+Comparison: Ra = 2.00 μm, Rq = 2.16 μm
+Ratio Rq/Ra = 1.08 (typical range 1.1–1.4 — Rq always ≥ Ra)
+Rq penalizes the outlier peaks/valleys (8μm point) more than Ra does.`},
 ];
 
 // ============================================================
